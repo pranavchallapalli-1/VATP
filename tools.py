@@ -121,7 +121,7 @@ def Top_Type(code:str)->dict:
                           "err":out.stderr
                     }
 
-    except Exception as e:
+    except Exception as e: # noqa: BLE001
          return {"Error":e}
     
     
@@ -159,7 +159,7 @@ def netlist(top:str,module_path:str,lib_path:str)->dict:
             """
             ]
         out=sp.run(cmd,capture_output=True,text=True,check=False)
-    except Exception as e:
+    except Exception as e: # noqa: BLE001
         return {
             "netlist_returncode":"-1",
             "netlist_stdout":"Error in netlsit generation.",             
