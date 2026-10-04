@@ -179,7 +179,73 @@ def netlist(top:str,module_path:str,lib_path:str)->dict:
         "netlist_stderr":out.stderr
     }
 
+def equi_check(top:str,path_1:str,path_2:str,design_type:str):
+    """   
+    Input:
+    top:str
+    path_1:source code
+    path_2:netlist file
+    design_type: seq|comb
 
+    Output:
+    returncode:int
+    pass:pass|fail
+    stdout:terminal output
+    stderr:terminal error | tool error
+    """
+    out="fail"
+    head = f"""
+            read_verilog {path_1};
+            prep -top {top};
+            rename {top} gold;
+            design -stash rtl;
+            design -reset;
+    
+            read_verilog  ../Nangate45/work_around_yosys/cells.v;
+            dfflibmap -liberty ../Nangate45/Nangate45_typ.lib;
+            read_verilog {path_2};
+            prep -top {top};
+                flatten;
+                techmap;
+                opt;
+            rename {top} gate;
+            design -copy-from rtl -as gold gold;
+            equiv_make gold gate equiv;
+            prep -top equiv;
+        """
+     
+    if design_type == "sequential":
+            body = """
+            clk2fflogic;
+            setundef -undriven -zero equiv;
+            equiv_struct;
+            equiv_simple;
+            equiv_induct;
+            equiv_status -assert;
+            """
+    else:
+            # No registers to unroll through: skip clk2fflogic/equiv_induct.
+            # equiv_simple already runs an exhaustive SAT check per output,
+            # which is complete for combinational-only logic.
+            body = """
+            setundef -undriven -zero equiv;
+            equiv_struct;
+            equiv_simple;
+            equiv_status -assert;
+            """
+     
+    cmd = ["yosys", 
+           "-p", 
+           head + body]
+    res = sp.run(cmd, capture_output=True, text=True,check=False)
+    if res.returncode ==0:
+          out="Pass"
+    return {
+            "return_code": res.returncode,
+            "pass":out,
+            "stdout": res.stdout,
+            "stderr": res.stderr,
+        }
 
 
 
