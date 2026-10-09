@@ -230,14 +230,12 @@ def equi_check(top:str,path_1:str,path_2:str,design_type:str):
             equiv_status -assert;
             """
     else:
-            # No registers to unroll through: skip clk2fflogic/equiv_induct.
-            # equiv_simple already runs an exhaustive SAT check per output,
-            # which is complete for combinational-only logic.
-            body = """
+        body = """
             setundef -undriven -zero equiv;
-            equiv_simple;
+            equiv_struct;
+            equiv_simple -short;
             equiv_status -assert;
-            """
+        """
      
     cmd = ["yosys", 
            "-p", 
